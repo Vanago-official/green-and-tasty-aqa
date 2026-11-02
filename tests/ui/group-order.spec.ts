@@ -90,8 +90,7 @@ test.describe('Level 2: submit and the waiter', { tag: ['@L2', '@ui'] }, () => {
     await expect(owner.grandTotal).toContainText('$0.00');
   });
 
-  test('known defect: the page still opens after submit', { tag: '@known-defect' }, async ({ page, newGroup, restaurant: r, api }) => {
-    test.fail(true, 'Reload after submit shows "Group reservation was submitted." instead of the read-only page');
+  test('the submitted group stays readable after a reload', async ({ page, newGroup, restaurant: r, api }) => {
     const group = await newGroup();
     await group.createOrder();
     await (await (await group.join('Andrii')).add(r.salad, 1)).submit();
@@ -99,7 +98,31 @@ test.describe('Level 2: submit and the waiter', { tag: ['@L2', '@ui'] }, () => {
     expect((await api.submitGroup(group.groupId, group.reservationId, group.owner.token)).status()).toBe(200);
     await signedIn(page, group.owner, await (await api.me(group.owner.token)).json());
     await new GroupOrderPage(page).goto(group.reservationId);
-    await expect(page.getByText('Sent to Restaurant')).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('Sent to Restaurant')).toBeVisible();
+    await expect(new GroupOrderPage(page).submitButton).toHaveCount(0);
+  });
+});
+
+test.describe('Owner access', { tag: ['@L2', '@ui'] }, () => {
+  test('the owner page opens when the group is full', async ({ page, newGroup, api }) => {
+    const group = await newGroup(2); // The owner plus one guest fill a table for two.
+    await group.join('Andrii');
+    await group.waitForGuests('Andrii');
+    expect((await api.join(group.groupId, 'Too many')).status()).toBe(400);
+    await signedIn(page, group.owner, await (await api.me(group.owner.token)).json());
+    const owner = new GroupOrderPage(page);
+    await owner.goto(group.reservationId);
+    await expect(owner.guest('Andrii')).toBeVisible();
+  });
+
+  test('the owner adds their own dishes through the menu', async ({ page, newGroup, restaurant: r, api }) => {
+    const group = await newGroup();
+    await signedIn(page, group.owner, await (await api.me(group.owner.token)).json());
+    await new GroupOrderPage(page).goto(group.reservationId);
+    await page.getByRole('button', { name: 'Add My Dishes' }).click();
+    await expect(page).toHaveURL(/\/join\//);
+    await expect(page.getByText(r.salad.name).first()).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('menu.png') });
   });
 });
 

@@ -35,6 +35,9 @@ export class Api {
   }
   order(token: string, reservationId: string) { return this.call('GET', `/orders/${reservationId}`, token); }
 
+  ownerGroup(token: string | undefined, reservationId: string) { return this.call('GET', `/reservations/${reservationId}/group`, token); }
+  ownerSessionToken(token: string | undefined, reservationId: string) { return this.call('POST', `/reservations/${reservationId}/owner-session-token`, token); }
+
   join(groupReservationId: string, guestName: string) { return this.call('POST', '/guest/sessions', undefined, { groupReservationId, guestName }); }
   addDish(sessionToken: string, sessionId: string, dishId: string, quantity: number) {
     return this.call('POST', `/guest/sessions/${sessionId}/dishes`, sessionToken, { dishId, quantity });

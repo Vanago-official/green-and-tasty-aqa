@@ -46,6 +46,15 @@ test.describe('Level 1: owner views the group pre-order', { tag: ['@L1', '@api']
     expect(await group.view()).toEqual({ participants: [], total: 0 });
   });
 
+  test('owner group details: 200 for the owner, 403 for others, 401 unauthorized', async ({ newGroup, users, api }) => {
+    const group = await newGroup();
+    const owner = await api.ownerGroup(group.owner.token, group.reservationId);
+    expect(owner.status()).toBe(200);
+    expect((await owner.json()).GroupReservationId).toBe(group.groupId);
+    expect((await api.ownerGroup((await users.create()).token, group.reservationId)).status()).toBe(403);
+    expect((await api.ownerGroup(undefined, group.reservationId)).status()).toBe(401);
+  });
+
   test('another client gets 403', async ({ newGroup, users, api }) => {
     const group = await newGroup();
     expect((await api.groupSessions(group.groupId, (await users.create()).token)).status()).toBe(403);

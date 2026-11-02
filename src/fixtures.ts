@@ -67,7 +67,7 @@ export class Group {
   }
 }
 
-interface Fixtures { seed: Seed; users: { create(): Promise<User> }; newGroup: () => Promise<Group>; api: Api }
+interface Fixtures { seed: Seed; users: { create(): Promise<User> }; newGroup: (guestCount?: number) => Promise<Group>; api: Api }
 interface WorkerFixtures { http: APIRequestContext; workerSeed: Seed; restaurant: Restaurant }
 
 async function registerUser(api: Api, seed: Seed): Promise<User> {
@@ -134,7 +134,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
 
   newGroup: async ({ api, seed, restaurant }, use) => {
     const groups: Array<{ groupReservationId: string; reservationId: string }> = [];
-    await use(async () => {
+    await use(async (guestCount = 8) => {
       const owner = await registerUser(api, seed);
       const tableId = uid('tbl');
       const tableNumber = 1000 + Math.floor(Math.random() * 9000);
@@ -142,7 +142,7 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
       // Always in the future, whenever the suite runs.
       const start = new Date(Date.now() + 3 * 24 * 3_600_000);
       const end = new Date(start.getTime() + 3_600_000);
-      const created = await api.createReservation(owner.token, tableId, 8, start, end);
+      const created = await api.createReservation(owner.token, tableId, guestCount, start, end);
       if (!created.ok()) throw new Error(`create reservation: ${created.status()} ${await created.text()}`);
       const reservationId = (await created.json()).id;
       seed.trackItem('Reservations', { id: reservationId });

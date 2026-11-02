@@ -34,7 +34,6 @@ Credentials come from `.env` or the standard AWS chain. `.env` is git-ignored. T
 npx playwright test --grep @L1          # level: @L1, @L2, @L3
 npx playwright test --grep @api         # layer: @api, @ui
 npx playwright test --grep "(?=.*@L2)(?=.*@ui)"
-npx playwright test --grep-invert @known-defect
 ```
 
 ## Reports
@@ -47,7 +46,7 @@ CI reads `UI_URL`, `API_URL`, `COGNITO_USER_POOL_ID` and `AWS_REGION` from repos
 
 ## Test data
 
-Every worker creates its own location, menu and waiter. Every test creates its own users, table and reservation with unique ids. The reservation always starts at `now + 3 days`. Tests are independent and run in parallel. Everything created is deleted afterwards, including after a failure.
+Every worker creates its own location, menu and waiter. Every test creates its own users, table and reservation with unique ids. The reservation always starts at `now + 3 days`. Tests are independent, run in parallel and do not touch the demo data. Everything created is deleted afterwards, including after a failure.
 
 Reservations, orders, guests and carts are prepared through the public API. Direct access is used only for what the API does not offer:
 
@@ -69,9 +68,7 @@ Reservations, orders, guests and carts are prepared through the public API. Dire
 
 ## Known limits of the application
 
-- **Defect, reload after submit:** the page shows `Group reservation was submitted.` instead of the read-only view. The test tagged `@known-defect` is expected to fail and will flag when this gets fixed.
 - **Two meanings of total:** the API `total` sums all participants. The UI Grand Total sums only submitted carts, because only those reach the order. Both are tested.
-- **Owner's own dishes:** guest endpoints need a guest token, and the owner session has none, so the owner cannot add dishes through it. The tests use the owner's own pre-order (`POST /orders`), which the group submit merges into.
 - **Blocked access in the UI:** non-owner and unauthorized visitors are checked by what they must not see. Status codes for all roles are asserted at API level.
 
 ## Not done

@@ -26,6 +26,19 @@ test.describe('Level 2: owner submits the group pre-order', { tag: ['@L2', '@api
     expect(stored.status).toBe(1); // GroupReservationStatus.Submitted
   });
 
+  test("the owner's own cart reaches the order", async ({ newGroup, restaurant: r, api, seed, users }) => {
+    const group = await newGroup();
+    await group.createOrder([{ dish: r.tea, quantity: 1 }]);
+    expect((await api.ownerSessionToken((await users.create()).token, group.reservationId)).status()).toBe(403);
+    const access = await (await api.ownerSessionToken(group.owner.token, group.reservationId)).json();
+    expect((await api.addDish(access.sessionToken, access.guestSessionId, r.soup.id, 2)).status()).toBeLessThan(300);
+    expect((await api.submitCart(access.sessionToken, access.guestSessionId)).status()).toBeLessThan(300);
+    await group.waitForGuest(access.guestName, (p) => p.isSubmitted);
+    expect((await api.submitGroup(group.groupId, group.reservationId, group.owner.token)).status()).toBe(200);
+    const [order] = await seed.find('Orders', 'reservationId', group.reservationId);
+    expect(order.dishes.find((d: any) => d.dishId === r.soup.id).quantity).toBe(2);
+  });
+
   test('fails when no cart is submitted', async ({ newGroup, restaurant: r, api }) => {
     const group = await newGroup();
     await group.createOrder();
