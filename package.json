@@ -1,0 +1,24 @@
+{
+  "name": "green-and-tasty-aqa",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --project=ui",
+    "report": "playwright show-report reports/html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1161.0",
+    "@aws-sdk/client-dynamodb": "^3.1161.0",
+    "@aws-sdk/util-dynamodb": "^3.996.9",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.6",
+    "dotenv": "^18.0.9",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}

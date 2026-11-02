@@ -1,0 +1,60 @@
+name: E2E
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      grep:
+        description: 'Subset by tag, for example @L1 or @api'
+        required: false
+        default: ''
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UI_URL: ${{ vars.UI_URL }}
+      API_URL: ${{ vars.API_URL }}
+      COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      GREP: ${{ inputs.grep }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx playwright install --with-deps chromium
+      - name: Run tests
+        run: npx playwright test ${GREP:+--grep "$GREP"}
+      - name: Summary
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import os, xml.etree.ElementTree as ET
+          if os.path.exists('reports/junit.xml'):
+              r = ET.parse('reports/junit.xml').getroot()
+              print(f"### E2E: {r.get('tests')} tests, {r.get('failures')} failures, {r.get('skipped')} skipped")
+              print('Download the `playwright-report` artifact and open `index.html`.')
+          PY
+      # Failed tests must not hide the report: these steps run whatever the result.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: reports/
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: failure-artifacts
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
