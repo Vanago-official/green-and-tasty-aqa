@@ -41,7 +41,7 @@ npx playwright test --grep-invert @known-defect
 
 - Locally: `npx playwright show-report reports/html`, and JUnit XML in `reports/junit.xml`.
 - Failed tests: screenshot, video and trace in `test-results/`.
-- CI: the `playwright-report` and `failure-artifacts` artifacts of an [E2E run](../../actions/workflows/e2e.yml), and a summary on the run page. Upload steps run even when tests fail. A run can be started by hand with a tag filter.
+- CI: the `playwright-report` and `failure-artifacts` artifacts of an [E2E run](../../actions/workflows/e2e.yml), and a summary on the run page. Upload steps run even when tests fail. A run can be started by hand with a tag filter. CI retries a failed test once with fresh data, because Lambda cold starts can exceed the API Gateway 29 s limit (504); the report marks such tests as flaky.
 
 CI reads `UI_URL`, `API_URL`, `COGNITO_USER_POOL_ID` and `AWS_REGION` from repository variables, and `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` from secrets. The CI identity is limited to the policy described above.
 

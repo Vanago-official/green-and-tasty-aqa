@@ -4,10 +4,11 @@ import 'dotenv/config';
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
-  workers: process.env.CI ? 3 : 4,
+  workers: process.env.CI ? 2 : 4,
   timeout: 120_000,
   expect: { timeout: 20_000 },
-  retries: 0,
+  // One retry with fresh data in CI: Lambda cold starts can exceed the API Gateway 29 s limit (504). Retried tests are reported as flaky.
+  retries: process.env.CI ? 1 : 0,
   reporter: [
     ['list'],
     ['html', { outputFolder: 'reports/html', open: 'never' }],
